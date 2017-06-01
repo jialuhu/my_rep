@@ -11,11 +11,11 @@
 #define N 20
 struct student
 {
-    char ID[6];
+    char ID[8];
     char name[20];
     int score[4];
 };
-int inCount;
+int iCount;
 int menu()
 {
     printf("|----------------------------------------------------|\n");
@@ -32,7 +32,7 @@ int menu()
     printf("|----------------------------------------------------|\n");
     return 0;
 }
-int enter(struct student st[],int n)
+int input(struct student st[],int n)
 {
     
     int i ,j;
@@ -42,10 +42,14 @@ int enter(struct student st[],int n)
     printf("|----------------------------------------------------|\n");
     for(i=0;i<n;i++)
     {
+        printf("学号：\n");
         scanf("%s",st[i].ID);
+        printf("姓名:\n");
         scanf("%s",st[i].name);
-        for(j=0;j<n;j++)
+        printf("成绩:\n");
+        for(j=0;j<4;j++)
         {
+
             scanf("%d",&st[i].score[j]);
         }
     }
@@ -65,8 +69,12 @@ int insert(struct student st[])
     printf("|---------------------------------------------------|\n");
     for(i = iCount;i<iCount+n;i++)
     {
+        printf("学号:\n");
         scanf("%s",st[i].ID);
+       // scanf("%s",st[i].name);
+        printf("姓名:\n");
         scanf("%s",st[i].name);
+        printf("成绩:\n");
         for(j = 0;j<4;j++)
         {
             scanf("%d",&st[i].score[j]);
@@ -78,22 +86,28 @@ int insert(struct student st[])
 }
 int find(struct student st[])
 {
-    char id[6];
+    char id[8];
     int i,j;
     printf("|----------------3、查找学生信息---------------------|\n");
     printf("|          注意：请输入要查找学生的ID：              |\n");
     printf("-----------------------------------------------------|\n");
-    gets(id);
+    scanf("%s",id);
     for(i =0;i<iCount;i++)
     {
-        if(id==st[i].ID)
+        if(strcmp(id,st[i].ID)==0)
         {
-            printf("%s\t",st[i].ID);
-            printf("%s\t",st[i].name);
+            printf("查到该生信息\n");
+            printf("学号:\t");
+            printf("%s\n",st[i].ID);
+            printf("姓名:\t");
+            printf("%s\n",st[i].name);
+            printf("成绩:\t");
             for(j=0;j<4;j++)
             {
                 printf("%d\t",st[i].score[j]);
             }
+            printf("\n");
+            break;
         }
     }
     return 0;
@@ -102,14 +116,14 @@ int revise(struct student st[])
 {
     int i ,j;
     struct student t;
-    char id[6];
+    char id[8];
     printf("|----------------4、修改学生信息---------------------|\n");
     printf("|          注意：请输入要修改学生的学号：            |\n");
     printf("|----------------------------------------------------|\n");
-    gets(id);
+    scanf("%s",id);
     for(i=0;i<iCount;i++)
     {
-        if(id==st[i].ID)
+        if(strcmp(id,st[i].ID)==0)
         {
             printf("已经找到该学生的信息，请完整输入该学生的新信息\n");
             printf("学号：\n");
@@ -128,12 +142,15 @@ int revise(struct student st[])
                 st[i].score[j] = t.score[j];
             }
             printf("该生信息修改为：\n");
-            printf("%s\t",st[i].ID);
-            printf("%s\t",st[i].name);
+            printf("学号:\t");
+            printf("%s\n",st[i].ID);
+            printf("姓名:\t");
+            printf("%s\n",st[i].name);
             for(j=0;j<4;j++)
             {
                 printf("%d\t",st[i].score[j]);
             }
+            printf("\n");
             break;
         }
     }
@@ -144,25 +161,26 @@ int delet(struct student st[])
 {
     int i ,j;
     char id[6];
-    char t;
+    int t;
     printf("|----------------5、删除学生信息--------------------|\n");
     printf("|          注意：请输入要删除的学生的学号：         |\n");
     printf("|---------------------------------------------------|\n");
-    gets(id);
+    scanf("%s",id);
     for(i=0;i<iCount;i++)
     {
-        if(st[i].ID==id)
+        if(strcmp(st[i].ID,id)==0)
         {
             printf("查到该学生信息：\n");
-            printf("是否删除（Y,N）：\n");
-            scanf("%c",&t);
-            if(t=='Y'||t=='y')
+            printf("是否删除（1,0）：\n");
+            scanf("%d",&t);
+            if(t==1)
             {
                 for(j = i;j<=iCount-1;j++)
                 {
-                    st[i] = st[j+1];
+                    st[j] = st[j+1];
                 }
                 iCount = iCount-1;
+                printf("删除成功！\n");
                 break;
             }
             else
@@ -170,15 +188,13 @@ int delet(struct student st[])
                 break;    
             }
         }
-        else
-        {
-            printf("未找到该学生的信息，请核对学生学号：\n");
-        }
+     }
+    printf("未查到该学生信息，请核对学号后再输入！\n");
      return 0;
 
 }
 
-int input(struct student st[])
+int output(struct student st[])
  {
      int i ,j;
      printf("|---------------6、查看学生信息--------------------|\n");
@@ -189,11 +205,13 @@ int input(struct student st[])
      for(i = 0;i<iCount;i++)
      {
          printf("%s\t",st[i].ID);
+        // printf("%s\t",st[i].name);
          printf("%s\t",st[i].name);
          for(j = 0;j<4;j++)
          {
              printf("%d\t",st[i].score[j]);
          }
+         printf("\n");
      }
      return 0;
  }
@@ -203,9 +221,9 @@ int main()
     int choise;
     int n;
     int C;
-    menu();
     do
     {
+        menu();
         scanf("%d",&choise);
         switch(choise)
         {
@@ -213,7 +231,7 @@ int main()
             {
                 printf("要输入几个学生的信息：\n");
                 scanf("%d",&n);
-                enter(st,n);
+                input(st,n);
                 break;
             }
             case 2:
@@ -238,7 +256,7 @@ int main()
             }
             case 6:
             {
-                input(st);
+                output(st);
                 break;
             }
         }
