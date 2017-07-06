@@ -63,10 +63,6 @@ int main()
     int sum = 0;
     printf("请输入n:\n");
     scanf("%d",&n);
-    /*for(i = 2;i<n;i++)
-    {
-        sum = sushu(fac(n-1))+sum;
-   }*/
     sum = fac(n);
     printf("%d\n",sum);
     
