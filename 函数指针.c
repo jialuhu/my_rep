@@ -20,9 +20,9 @@ int main()
 {
     int i = 15,j=20;
     int max;
-    int (*p)(int,int);
+    int (*p)(int,int);//需要定义一个函数指针变量来接受函数funcation的返回值
     p = funcation(100);
-    max = p(i,j);
+    max = p(i,j);//需要定义一个整数来接收函数max的返回值
     printf("max = %d\n",max);
     return 0;
     
