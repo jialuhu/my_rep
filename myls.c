@@ -118,7 +118,7 @@ char *Filename(char *pathname)//目录到文件名称的解析函数解析出文
     return str;
 }
 
-void R(char *path,int flag)
+void R(char *path,int flag)//参数-R
 {
     char *dir_nm;
     printf("%s:\n",path);
@@ -128,7 +128,7 @@ void R(char *path,int flag)
     int i=0,j=0;
     char *p;
     int count = 0;
-    int A=0,R1=0,L=0;
+    int A=0,R1=0,L=0,three=0;
     switch(flag)
     {
         case LS_R:
@@ -146,50 +146,86 @@ void R(char *path,int flag)
             L=1;
             break;
         }
-    }
-    if((dir = opendir(path)) == NULL)
-    {
-        my_err("opendir:",__LINE__);
-    }
-    
-    while((ptr = readdir(dir)) != NULL)
-    {
-        char c[256]={0};
-        strcpy(c,ptr->d_name);
-        if(!A)
+        case LS_L+LS_R+LS_A:
         {
-            if(c[0]!='.')
+            three=1;
+            break;
+        }
+    }
+        if(L){open_dir(path,LS_L);printf("\n");}
+        if(three){open_dir(path,LS_L+LS_A);printf("\n");}
+   // if(L==0&&three==0)
+   // {
+        if((dir = opendir(path)) == NULL)
+        {
+            my_err("opendir:",__LINE__);
+        }
+    
+        while((ptr = readdir(dir)) != NULL)
+        {
+            char c[256]={0};
+            strcpy(c,ptr->d_name);
+            if(L==1||three==1){break;}
+            if(!A)
+            {
+                if(c[0]!='.')
+                {
+                    printf("%s\t",ptr->d_name);
+                }
+            }
+            if(A)
             {
                 printf("%s\t",ptr->d_name);
             }
         }
-        if(A)
+        printf("\n\n\n");
+        closedir(dir);
+        if((dir = opendir(path)) == NULL)
         {
-            printf("%s\t",ptr->d_name);
+            my_err("opendir:",__LINE__);
         }
-    }
-    printf("\n\n\n");
-    closedir(dir);
-    if((dir = opendir(path)) == NULL)
-    {
-        my_err("opendir:",__LINE__);
-    }
-    while((ptr = readdir(dir)) != NULL)
-    {
-        char a[256]={0};
-        strcpy(a,ptr->d_name);
-        if(!A)
+        while((ptr = readdir(dir)) != NULL)
         {
-            char b[256]={0};
-            if(a[0]!='.')
+            char a[256]={0};
+            strcpy(a,ptr->d_name);
+            if(!A)
             {
+                char b[256]={0};
+                if(a[0]!='.')
+                {
+                    strcpy(b,path);
+                    strcat(b,"/");
+                    strcat(b,ptr->d_name);
+                    b[strlen(path)+strlen(ptr->d_name)+1]='\0';
+                    if(stat(b,&buf) ==-1)
+                    {
+                        printf("\n\n\nb=%s\n\n\n",b);
+                        my_err("lstat",__LINE__);
+                    }
+                    else{
+                            if(S_ISDIR(buf.st_mode))
+                            {
+                                if((strcmp(ptr->d_name,".")!=0)&&(strcmp(ptr->d_name,"..")!=0))
+                                {
+
+                                    dir_nm = (char *)malloc(strlen(b)+1);
+                                    strcpy(dir_nm,b);
+                                    R(dir_nm,flag);
+                                free(dir_nm);
+                                }
+                            }
+                        }
+                }
+            }
+            if(A)
+            {
+                char b[256]={0};
                 strcpy(b,path);
                 strcat(b,"/");
                 strcat(b,ptr->d_name);
                 b[strlen(path)+strlen(ptr->d_name)+1]='\0';
-                if(stat(b,&buf) ==-1)
+                if(lstat(b,&buf) ==-1)
                 {
-                    printf("\n\n\nb=%s\n\n\n",b);
                     my_err("lstat",__LINE__);
                 }
                 else{
@@ -197,41 +233,18 @@ void R(char *path,int flag)
                         {
                             if((strcmp(ptr->d_name,".")!=0)&&(strcmp(ptr->d_name,"..")!=0))
                             {
-                                dir_nm = (char *)malloc(strlen(b)+1);
-                                strcpy(dir_nm,b);
-                                R(dir_nm,flag);
+                            dir_nm = (char *)malloc(strlen(b)+1);
+                            strcpy(dir_nm,b);
+                            R(dir_nm,flag);
                             free(dir_nm);
                             }
                         }
                     }
             }
         }
-        if(A)
-        {
-            char b[256]={0};
-            strcpy(b,path);
-            strcat(b,"/");
-            strcat(b,ptr->d_name);
-            b[strlen(path)+strlen(ptr->d_name)+1]='\0';
-            if(lstat(b,&buf) ==-1)
-            {
-                my_err("lstat",__LINE__);
-            }
-            else{
-                    if(S_ISDIR(buf.st_mode))
-                    {
-                        if((strcmp(ptr->d_name,".")!=0)&&(strcmp(ptr->d_name,"..")!=0))
-                        {
-                        dir_nm = (char *)malloc(strlen(b)+1);
-                        strcpy(dir_nm,b);
-                        R(dir_nm,flag);
-                        free(dir_nm);
-                        }
-                    }
-                }
-        }
-    }
     closedir(dir);
+
+   // }
 }
 void open_dir(char *pathname,int flag)//打开目录来遍历该目录下的文件
 {
@@ -295,6 +308,17 @@ void open_dir(char *pathname,int flag)//打开目录来遍历该目录下的文�
             break;
             
         }
+        case LS_L+LS_R:
+        {
+            R(pathname,flag);
+            break;
+        }
+        case LS_L+LS_R+LS_A:
+        {
+            printf("jinru\n");
+            R(pathname,flag);
+            break;
+        }
         case LS_L://-l
         {
             struct stat buf[256];
@@ -347,6 +371,10 @@ void open_dir(char *pathname,int flag)//打开目录来遍历该目录下的文�
             }
             break;
         }
+        default:
+            {
+                printf("no flag\n");
+            }
         
     }
 }
@@ -392,22 +420,21 @@ int main(int argc,char **argv)
             flag = LS_A+flag;A=1;
         }
         if(Param[i]=='l'){
-            flag |= LS_L+flag;L=1;
-
+            flag = LS_L+flag;L=1;
         }
         if(Param[i]=='R'){
-            flag |= LS_R+flag;R1=1;
+            flag = LS_R+flag;R1=1;
         }
         if(Param[i]=='r'){
-            flag |= LS_r+flag;r=1;
+            flag = LS_r+flag;r=1;
         }
     }
     if((n-1) == k)//无文件名
     {
         /*无文件名将把当前目录传入函数中*/
         strcpy(pathname,".");
-        open_dir(pathname,flag);
-        if(R&&!L)
+       // open_dir(pathname,flag);
+        if(R1)
         {
             R(pathname,flag);
         }
@@ -440,18 +467,10 @@ int main(int argc,char **argv)
         {
             char *p = Filename(pathname);//解析出文件名称
             /*判断出参数情况*/
-            /*if(flag == LS_A)//-a
-            {
-                printf("%s\n",p);
-            }*/
             if(L)//-l
             {
                 output_l(buf,pathname);
             }
-            /*if(flag == LS_A+LS_L)//-al
-            {
-                output_l(buf, pathname);
-            }*/
             if(!L)//ls
             {
                 printf("%s\n",pathname);
