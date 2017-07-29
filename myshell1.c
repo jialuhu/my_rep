@@ -35,8 +35,8 @@ void do_command(int arglist_count,char arglist[100][256]);//查找到该命令�
 int find_command(char *command);//查找命令所在文件
 int save_inf(char *buf);//存储函数
 char* get_path();//获取当前目录
+int history();//记录历史命令
 
-/*readline函数处理部分*/
 int com_list(char *para)
 {
     printf("do com_list:%s\n", para);
@@ -86,6 +86,8 @@ int com_quit(char *para)
     printf("do com_quit:%s\n", para);
     exit(0);
 }
+
+
 typedef struct {
     char *name;            
     rl_icpfunc_t *func;     
@@ -173,7 +175,7 @@ void initialize_readline ()
     rl_readline_name = ">";
     rl_attempted_completion_function = fileman_completion;
 }
-void input (char *buf)//输入处理
+void input (char *buf)
 {
     char *line, *s;
     struct passwd *pwd;
@@ -182,12 +184,12 @@ void input (char *buf)//输入处理
     char *home;
     char st[256] = {0};
     char host[100] = {0};
-    char N_path[256]={0};//N_path[0]='~';
+    char N_path[2560]={0};//N_path[0]='~';
     char *p;
     char *q;
      home = (char *)malloc(20);
     line = (char *)malloc(256);
-     path = (char *)malloc(256);
+     path = (char *)malloc(2560);
     /*获取主机名称和用户名称*/
     if(gethostname(host,sizeof(host))<0)
     {
@@ -211,15 +213,15 @@ void input (char *buf)//输入处理
     N_path[strlen(N_path)+1]='\0';
     sprintf(st,"\033[;36m %s@%s \033[0m:\033[;34m ~%s \033[0m",pwd->pw_name,hp->h_name,N_path);
     initialize_readline();
-    line = readline (st);//tab补全命令
+    line = readline (st);
     strcpy(buf,line);
     if (!line)
         return;
-    s = stripwhite (line);//消除空格
-    strcpy(buf,s);//拷贝到buf中
+    s = stripwhite (line);
+    strcpy(buf,s);
     if (*s)
     {
-        add_history(s);//上下翻历史命令
+        add_history(s);
     }
     free(line);
 }
@@ -245,6 +247,7 @@ int main()
         {
             exit(0);
         }
+       // save_inf(buf);
         if((strcmp(buf,"exit\n")==0)||(strcmp(buf,"logout\n")==0))
         {
             break;
@@ -254,6 +257,7 @@ int main()
             arglist[i][0]=0;//初始化
         }
         arglist_count=0;
+        int b=0;
         explan_command(buf,&arglist_count,arglist);//分解出命令,一个模块站一个一维数组
         do_command(arglist_count,arglist);//查找到该命令并且执行
     }
@@ -262,10 +266,26 @@ int main()
         free(buf);
         exit(0);
     }
+    return 0;
 }
 void mysignal(int signal)
 {
 }
+void print()//shell输出的格式
+{
+    struct passwd *pwd;
+    struct hostent *hp;
+    char host[100]={0};
+    if(gethostname(host,sizeof(host))<0)
+    {
+        perror("gethostname");
+    }
+    hp = gethostbyname(host);
+    pwd = getpwuid(getuid());
+    printf("\033[;34m %s@%s \033[0m",pwd->pw_name,hp->h_name);
+    printf(">>: ");
+}
+
 int save_inf(char *buf)//存储历史命令，为history函数做准备
 {
     int fd;
@@ -299,41 +319,18 @@ int save_inf(char *buf)//存储历史命令，为history函数做准备
         
     }
     temp[i]='\0';
-    if((fd = open(file,O_CREAT|O_RDWR|O_APPEND))==-1)
+    if((fd = open(file,O_CREAT|O_RDWR|O_APPEND,0666))==-1)
     {
         perror("open");
     }
     else
     {
-        write(fd,buf,strlen(temp));
+        write(fd,buf,strlen(buf));
         write(fd,a,strlen(a));
     }
     close(fd);
     return 0;
 }
-
-int history()//记录历史命令
-{
-    char *temp="history.txt";
-    int fd;
-    FILE *fp;
-    char command[256];
-    if((fp = fopen(temp,"rw+"))==NULL)
-    {
-        perror("open");
-    }
-    else
-    {
-        fread(command,1,256,fp);
-    }
-    int i = 0;
-    while(command[i]!='\0')
-    {
-        printf("%c",command[i]);
-        i++;
-    }
-}
-
 void explan_command(char *buf,int *arglist_count,char arglist[100][256])
 {
     int len=0;
@@ -353,6 +350,7 @@ void explan_command(char *buf,int *arglist_count,char arglist[100][256])
         {
             break;
         }
+        
         else
         {
             p = q;
@@ -364,16 +362,18 @@ void explan_command(char *buf,int *arglist_count,char arglist[100][256])
             }
             strncpy(arglist[*arglist_count], q, len+1);//包括空格和\n都要读入
             arglist[*arglist_count][len]='\0';
-            //printf("arglist[%d]=%s\n",*arglist_count,arglist[*arglist_count]);
+            printf("arglist[%d]=%s\n",*arglist_count,arglist[*arglist_count]);
             *arglist_count = *arglist_count+1;
             q = p;
         }
     
     }
+    printf("arglist_count=%d\n",*arglist_count);
 }
 
 void do_command(int arglist_count, char arglist[100][256])
 {
+    printf("\n");
     char *arg[arglist_count+1];//指针数组
     int i=0;
     int flag = 0;//标记是否合法字符
@@ -387,12 +387,29 @@ void do_command(int arglist_count, char arglist[100][256])
     for(i=0;i<arglist_count;i++)
     {
         arg[i] = (char *)arglist[i];
+        printf("arg[i]=%s\n",arg[i]);
     }
     if(strcmp(arglist[0],"ls")==0)//使有ls命令的带上颜色
     {
+        if(strcmp(arglist[arglist_count-1],"&")==0)
+        {
+            strcpy(arglist[arglist_count-1],"--color");
+            arg[arglist_count-1]=(char *)arglist[arglist_count-1];
+            back=1;
+        }
+        else{
         strcpy(arglist[arglist_count],"--color");
         arg[arglist_count]=(char *)arglist[arglist_count];
-        arglist_count++;
+            arglist_count++;
+        }
+    }
+    if((strcmp(arg[0],"history")==0)&&(arglist_count==1))
+    {
+        arg[0]="cat";
+       arg[1]="-n";
+        arg[2]="history.txt";
+        arg[3]=NULL;
+        arglist_count=3;
     }
     arg[arglist_count]=NULL;//指针数组保证最后一个指针为NULL
     if(arg[0]!=NULL)//当第一个命令不是\n的时候进行判断
@@ -430,17 +447,17 @@ void do_command(int arglist_count, char arglist[100][256])
             if(j==arglist_count-1)
             {
                 back = 1;
+               // printf("back:%d\n",back);
                 arg[arglist_count-1]=NULL;
                 break;
             }
-            else{printf("wrong command\n");return;}
+            else{printf("wrong4 command\n");return;}
         }
     }
-    if(back!= 1)
-    {
-        for(i=0;i<arglist_count;i++)//判断是是哪种类型的命令，并且是否合法
+   // if(back!= 1)
+    //{
+        for(i=0;arg[i]!=NULL;i++)//判断是是哪种类型的命令，并且是否合法
         {
-            //printf("jinru*=%d\n",arglist_count);
             if(strcmp(arg[i],"<")==0)//判断是否是重定向输入
             {
                 flag++;
@@ -477,7 +494,7 @@ void do_command(int arglist_count, char arglist[100][256])
                     flag++;
                 }
             }
-        }
+      //  }
     }
 
     if(flag>1)//flag>1命令格式错误
@@ -485,7 +502,7 @@ void do_command(int arglist_count, char arglist[100][256])
         printf("wrong command\n");
         return;
     }
-    for(i=0;arg[i]!=NULL;i++)//解析命令
+   /* for(i=0;arg[i]!=NULL;i++)//解析命令
     {
         if(strcmp(arg[i],"<") == 0)
         {
@@ -519,51 +536,101 @@ void do_command(int arglist_count, char arglist[100][256])
             break;
 
         }
+    }*/
+    if(refind == in_redir)//如果该命令是重定向输入
+    {
+        for(i=0;arg[i]!=NULL;i++)
+        {
+            if(strcmp(arg[i],"<")==0)
+            {
+                filename = arg[i+1];
+                arg[i]=NULL;
+            }
+        }
+    }
+    if(refind == out_redir)//如果该命令是重定向输入
+    {
+        for(i=0;arg[i]!=NULL;i++)
+        {
+            if(strcmp(arg[i],">")==0)
+            {
+                filename = arg[i+1];
+                arg[i] = NULL;
+            }
+        }
+    }
+    if(refind == have_pipe)//如果该命令是管道命令
+    {
+        for(i=0;arg[i]!=NULL;i++)
+        {
+            if(strcmp(arg[i],"|")==0)
+            {
+                arg[i]=NULL;
+                int j = i+1;
+                int t=0;
+                for(j=i+1;arg[j]!=NULL;j++)
+                {
+                    anext[t] = arg[j];
+                    t++;
+                }
+                anext[t] = NULL;
+                break;
+            }
+        }
     }
    if((pid = fork())<0)
    {
        printf("fork is errno");
        return;
    }
-   if(pid==0)
-   {
+  // if(pid==0)
+   //{
         switch(refind)
         {
             case 0://为普通命令格式
             {
-                if(!(find_command(arg[0])))
+               if(pid==0)
                 {
-                    printf("%s command is not find\n",arg[0]);
-                    exit(0);
-                }
+                    if(!(find_command(arg[0])))
+                    {
+                        printf("%s command is not find\n",arg[0]);
+                        exit(0);
+                    }
                 execvp(arg[0],arg);
                 exit(0);
+                }
             break;
             }
             case 1://命令为重定向输出>
             {
-                if((!find_command(arg[0])))
+                if(pid==0)
                 {
-                    printf("%s command is not find\n",arg[0]);
+                    if((!find_command(arg[0])))
+                    {
+                        printf("%s command is not find\n",arg[0]);
+                        exit(0);
+                    }
+                    fd = open(filename,O_CREAT|O_RDWR|O_TRUNC,0644);
+                    dup2(fd,1);
+                    execvp(arg[0],arg);
                     exit(0);
                 }
-                fd = open(filename,O_CREAT|O_RDWR|O_TRUNC,0644);
-                dup2(fd,1);
-                execvp(arg[0],arg);
-                exit(0);
                 break;
             }
  	        case 2://命令为重定向输入<
             {
+                if(pid==0)
+                {
                    if(!find_command(arg[0]))
                     {
                         printf("%s :command is not fond\n",arg[0]);
                         exit(0);
                     }
-                fd = open(filename, O_RDONLY);
-                dup2(fd,0);
-                execvp(arg[0],arg);
-                exit(0);
+                    fd = open(filename, O_RDONLY);
+                    dup2(fd,0);
+                    execvp(arg[0],arg);
+                    exit(0);
+                }
                 break;
             }
             case 3://输出命令中含有管道
@@ -612,6 +679,8 @@ void do_command(int arglist_count, char arglist[100][256])
             }
             case 4://命令为重定向追加>>
             {
+                if(pid ==0 )
+                {
                    if(!find_command(arg[0]))
                     {
                         printf("%s :command is not fond\n",arg[0]);
@@ -621,20 +690,22 @@ void do_command(int arglist_count, char arglist[100][256])
                     dup2(fd,1);
                     execvp(arg[0],arg);
                     exit(0);
+                }
                 break;
             }
             default:break;
-        }
-    }
-    if(back==1)
-    {
-        printf("[process is %d]\n",pid);
-        return;
-    }
+     //   }
+   }
+ if(back==1)
+{
+    printf("[process is %d]\n",pid);
+    return;
+}
    if(waitpid(pid,&status,0) == -1)//等待子进程1结束
    {
        printf("wati for child errno");
    }
+   printf("\n");
 }
 int find_command(char *command)//查找命令所在的文件，并且返回1和0来判断是否执行
 {
